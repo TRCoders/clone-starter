@@ -1,18 +1,17 @@
-var thumbUp = document.getElementsByClassName("fa-thumbs-up");
-var trash = document.getElementsByClassName("fa-trash");
+let postComments = document.getElementsByClassName("commentsByUsers");
+let postLikeButton = document.getElementsByClassName("postLikeButton");
 
-Array.from(thumbUp).forEach(function(element) {
-      element.addEventListener('click', function(){
-        const name = this.parentNode.parentNode.childNodes[1].innerText
-        const msg = this.parentNode.parentNode.childNodes[3].innerText
-        const thumbUp = parseFloat(this.parentNode.parentNode.childNodes[5].innerText)
-        fetch('messages', {
+Array.from(postLikeButton).forEach(function(element) {
+      element.addEventListener('click', function(e){
+        const postLikeButton = parseInt(this.parentNode.parentNode.childNodes[6].innerText)
+        const postUserId = e.target.dataset.id
+
+        fetch('feed', {
           method: 'put',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
-            'name': name,
-            'msg': msg,
-            'thumbUp':thumbUp
+            'postUserId': postUserId,
+            'postLikeButton': postLikeButton,
           })
         })
         .then(response => {
@@ -25,18 +24,19 @@ Array.from(thumbUp).forEach(function(element) {
       });
 });
 
-Array.from(trash).forEach(function(element) {
-      element.addEventListener('click', function(){
-        const name = this.parentNode.parentNode.childNodes[1].innerText
-        const msg = this.parentNode.parentNode.childNodes[3].innerText
-        fetch('messages', {
-          method: 'delete',
+Array.from(postComments).forEach(function(element) {
+      element.addEventListener('click', function(e){
+        const commentsFromUser = this.parentNode.childNodes[8].childNodes[3].value
+        const postCommentId = e.target.dataset.postCommentId
+
+        fetch('usercomments', {
+          method: 'put',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            'name': name,
-            'msg': msg
+            'postCommentId': postCommentId,
+            'commentsFromUser': commentsFromUser
           })
         }).then(function (response) {
           window.location.reload()

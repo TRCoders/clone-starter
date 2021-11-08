@@ -38,8 +38,8 @@ var upload = multer({storage: storage});
       })
   });
   //post page
-  app.get('/post/:zebra', isLoggedIn, function(req, res) {
-    let postId = ObjectId(req.params.zebra)
+  app.get('/post/:lion', isLoggedIn, function(req, res) {
+    let postId = ObjectId(req.params.lion)
     console.log(postId)
     db.collection('posts').find({_id: postId}).toArray((err, result) => {
       if (err) return console.log(err)
@@ -67,7 +67,7 @@ app.get('/page/:id', isLoggedIn, function(req, res) {
 // post routes
 app.post('/makePost', upload.single('file-to-upload'), (req, res) => {
   let user = req.user._id
-  db.collection('posts').save({caption: req.body.caption, img: 'images/uploads/' + req.file.filename, postedBy: user}, (err, result) => {
+  db.collection('posts').save({caption: req.body.caption, img: 'images/uploads/' + req.file.filename, postedBy: user, postLikes: 0, userComments: []}, (err, result) => {
     if (err) return console.log(err)
     console.log('saved to database')
     res.redirect('/profile')
@@ -77,33 +77,34 @@ app.post('/makePost', upload.single('file-to-upload'), (req, res) => {
 
 // message board routes ===============================================================
 
-    app.post('/messages', (req, res) => {
-      db.collection('messages').save({name: req.body.name, msg: req.body.msg, thumbUp: 0, thumbDown:0}, (err, result) => {
-        if (err) return console.log(err)
-        console.log('saved to database')
-        res.redirect('/profile')
-      })
-    })
-
-    app.put('/messages', (req, res) => {
-      db.collection('messages')
-      .findOneAndUpdate({name: req.body.name, msg: req.body.msg}, {
+    app.put('/feed', (req, res) => {
+      let userId = ObjectId(req.body.userId)
+      db.collection('userposts').findOneAndUpdate({_id: userId}, {
         $set: {
-          thumbUp:req.body.thumbUp + 1
+          postLikes: req.body.postLikes + 1
         }
       }, {
         sort: {_id: -1},
-        upsert: true
+        upsert: false
       }, (err, result) => {
         if (err) return res.send(err)
         res.send(result)
       })
     })
 
-    app.delete('/messages', (req, res) => {
-      db.collection('messages').findOneAndDelete({name: req.body.name, msg: req.body.msg}, (err, result) => {
-        if (err) return res.send(500, err)
-        res.send('Message deleted!')
+    app.put('/usercomments', (req, res) => {
+      let userPostId = ObjectId(req.body.userPostId)
+      db.collection('userposts')
+      .findOneAndUpdate({_id: userPostId}, {
+        $push: {
+          userComments:req.body.userComments
+        }
+      }, {
+        sort: {_id: -1},
+        upsert: false
+      }, (err, result) => {
+        if (err) return res.send(err)
+        res.send(result)
       })
     })
 
@@ -147,7 +148,7 @@ app.post('/makePost', upload.single('file-to-upload'), (req, res) => {
 
     // local -----------------------------------
     app.get('/unlink/local', isLoggedIn, function(req, res) {
-        var user            = req.user;
+        let user            = req.user;
         user.local.email    = undefined;
         user.local.password = undefined;
         user.save(function(err) {
